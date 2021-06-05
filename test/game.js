@@ -1,6 +1,6 @@
 process.env.TESTENV = true
 
-let Example = require('../app/models/example.js')
+let Game = require('../app/models/game.js')
 let User = require('../app/models/user')
 
 const crypto = require('crypto')
@@ -16,14 +16,14 @@ const token = crypto.randomBytes(16).toString('hex')
 let userId
 let exampleId
 
-describe('Examples', () => {
+describe('Games', () => {
   const exampleParams = {
     title: '13 JavaScript tricks SEI instructors don\'t want you to know',
     text: 'You won\'believe number 8!'
   }
 
   before(done => {
-    Example.deleteMany({})
+    Game.deleteMany({})
       .then(() => User.create({
         email: 'caleb',
         hashedPassword: '12345',
@@ -33,7 +33,7 @@ describe('Examples', () => {
         userId = user._id
         return user
       })
-      .then(() => Example.create(Object.assign(exampleParams, {owner: userId})))
+      .then(() => Game.create(Object.assign(exampleParams, {owner: userId})))
       .then(record => {
         exampleId = record._id
         done()
@@ -41,39 +41,39 @@ describe('Examples', () => {
       .catch(console.error)
   })
 
-  describe('GET /examples', () => {
-    it('should get all the examples', done => {
+  describe('GET /games', () => {
+    it('should get all the games', done => {
       chai.request(server)
-        .get('/examples')
+        .get('/games')
         .set('Authorization', `Token token=${token}`)
         .end((e, res) => {
           res.should.have.status(200)
-          res.body.examples.should.be.a('array')
-          res.body.examples.length.should.be.eql(1)
+          res.body.games.should.be.a('array')
+          res.body.games.length.should.be.eql(1)
           done()
         })
     })
   })
 
-  describe('GET /examples/:id', () => {
-    it('should get one example', done => {
+  describe('GET /games/:id', () => {
+    it('should get one game', done => {
       chai.request(server)
-        .get('/examples/' + exampleId)
+        .get('/games/' + exampleId)
         .set('Authorization', `Token token=${token}`)
         .end((e, res) => {
           res.should.have.status(200)
-          res.body.example.should.be.a('object')
-          res.body.example.title.should.eql(exampleParams.title)
+          res.body.game.should.be.a('object')
+          res.body.game.title.should.eql(exampleParams.title)
           done()
         })
     })
   })
 
-  describe('DELETE /examples/:id', () => {
+  describe('DELETE /games/:id', () => {
     let exampleId
 
     before(done => {
-      Example.create(Object.assign(exampleParams, { owner: userId }))
+      Game.create(Object.assign(exampleParams, { owner: userId }))
         .then(record => {
           exampleId = record._id
           done()
@@ -83,7 +83,7 @@ describe('Examples', () => {
 
     it('must be owned by the user', done => {
       chai.request(server)
-        .delete('/examples/' + exampleId)
+        .delete('/games/' + exampleId)
         .set('Authorization', `Bearer notarealtoken`)
         .end((e, res) => {
           res.should.have.status(401)
@@ -93,7 +93,7 @@ describe('Examples', () => {
 
     it('should be succesful if you own the resource', done => {
       chai.request(server)
-        .delete('/examples/' + exampleId)
+        .delete('/games/' + exampleId)
         .set('Authorization', `Bearer ${token}`)
         .end((e, res) => {
           res.should.have.status(204)
@@ -103,7 +103,7 @@ describe('Examples', () => {
 
     it('should return 404 if the resource doesn\'t exist', done => {
       chai.request(server)
-        .delete('/examples/' + exampleId)
+        .delete('/games/' + exampleId)
         .set('Authorization', `Bearer ${token}`)
         .end((e, res) => {
           res.should.have.status(404)
@@ -112,16 +112,16 @@ describe('Examples', () => {
     })
   })
 
-  describe('POST /examples', () => {
-    it('should not POST an example without a title', done => {
+  describe('POST /games', () => {
+    it('should not POST an game without a title', done => {
       let noTitle = {
         text: 'Untitled',
         owner: 'fakedID'
       }
       chai.request(server)
-        .post('/examples')
+        .post('/games')
         .set('Authorization', `Bearer ${token}`)
-        .send({ example: noTitle })
+        .send({ game: noTitle })
         .end((e, res) => {
           res.should.have.status(422)
           res.should.be.a('object')
@@ -129,15 +129,15 @@ describe('Examples', () => {
         })
     })
 
-    it('should not POST an example without text', done => {
+    it('should not POST an game without text', done => {
       let noText = {
-        title: 'Not a very good example, is it?',
+        title: 'Not a very good game, is it?',
         owner: 'fakeID'
       }
       chai.request(server)
-        .post('/examples')
+        .post('/games')
         .set('Authorization', `Bearer ${token}`)
-        .send({ example: noText })
+        .send({ game: noText })
         .end((e, res) => {
           res.should.have.status(422)
           res.should.be.a('object')
@@ -147,35 +147,35 @@ describe('Examples', () => {
 
     it('should not allow a POST from an unauthenticated user', done => {
       chai.request(server)
-        .post('/examples')
-        .send({ example: exampleParams })
+        .post('/games')
+        .send({ game: exampleParams })
         .end((e, res) => {
           res.should.have.status(401)
           done()
         })
     })
 
-    it('should POST an example with the correct params', done => {
+    it('should POST an game with the correct params', done => {
       let validExample = {
         title: 'I ran a shell command. You won\'t believe what happened next!',
         text: 'it was rm -rf / --no-preserve-root'
       }
       chai.request(server)
-        .post('/examples')
+        .post('/games')
         .set('Authorization', `Bearer ${token}`)
-        .send({ example: validExample })
+        .send({ game: validExample })
         .end((e, res) => {
           res.should.have.status(201)
           res.body.should.be.a('object')
-          res.body.should.have.property('example')
-          res.body.example.should.have.property('title')
-          res.body.example.title.should.eql(validExample.title)
+          res.body.should.have.property('game')
+          res.body.game.should.have.property('title')
+          res.body.game.title.should.eql(validExample.title)
           done()
         })
     })
   })
 
-  describe('PATCH /examples/:id', () => {
+  describe('PATCH /games/:id', () => {
     let exampleId
 
     const fields = {
@@ -184,15 +184,15 @@ describe('Examples', () => {
     }
 
     before(async function () {
-      const record = await Example.create(Object.assign(exampleParams, { owner: userId }))
+      const record = await Game.create(Object.assign(exampleParams, { owner: userId }))
       exampleId = record._id
     })
 
     it('must be owned by the user', done => {
       chai.request(server)
-        .patch('/examples/' + exampleId)
+        .patch('/games/' + exampleId)
         .set('Authorization', `Bearer notarealtoken`)
-        .send({ example: fields })
+        .send({ game: fields })
         .end((e, res) => {
           res.should.have.status(401)
           done()
@@ -201,9 +201,9 @@ describe('Examples', () => {
 
     it('should update fields when PATCHed', done => {
       chai.request(server)
-        .patch(`/examples/${exampleId}`)
+        .patch(`/games/${exampleId}`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ example: fields })
+        .send({ game: fields })
         .end((e, res) => {
           res.should.have.status(204)
           done()
@@ -212,32 +212,32 @@ describe('Examples', () => {
 
     it('shows the updated resource when fetched with GET', done => {
       chai.request(server)
-        .get(`/examples/${exampleId}`)
+        .get(`/games/${exampleId}`)
         .set('Authorization', `Bearer ${token}`)
         .end((e, res) => {
           res.should.have.status(200)
           res.body.should.be.a('object')
-          res.body.example.title.should.eql(fields.title)
-          res.body.example.text.should.eql(fields.text)
+          res.body.game.title.should.eql(fields.title)
+          res.body.game.text.should.eql(fields.text)
           done()
         })
     })
 
     it('doesn\'t overwrite fields with empty strings', done => {
       chai.request(server)
-        .patch(`/examples/${exampleId}`)
+        .patch(`/games/${exampleId}`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ example: { text: '' } })
+        .send({ game: { text: '' } })
         .then(() => {
           chai.request(server)
-            .get(`/examples/${exampleId}`)
+            .get(`/games/${exampleId}`)
             .set('Authorization', `Bearer ${token}`)
             .end((e, res) => {
               res.should.have.status(200)
               res.body.should.be.a('object')
-              // console.log(res.body.example.text)
-              res.body.example.title.should.eql(fields.title)
-              res.body.example.text.should.eql(fields.text)
+              // console.log(res.body.game.text)
+              res.body.game.title.should.eql(fields.title)
+              res.body.game.text.should.eql(fields.text)
               done()
             })
         })
